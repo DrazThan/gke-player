@@ -5,21 +5,39 @@ import config from '../config';
 const VideoPlayer = () => {
   const [videos, setVideos] = useState([]);
   const [currentVideo, setCurrentVideo] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchMetadata = async () => {
-      const metadata = await getVideoMetadata(config.spreadsheetId);
-      setVideos(metadata);
-      if (metadata.length > 0) {
-        setCurrentVideo(metadata[0]);
+      try {
+        const metadata = await getVideoMetadata(config.spreadsheetId, config.apiKey);
+        setVideos(metadata);
+        if (metadata.length > 0) {
+          setCurrentVideo(metadata[0]);
+        }
+      } catch (err) {
+        setError('Failed to load video metadata');
+        console.error(err);
       }
     };
 
     fetchMetadata();
   }, []);
 
+  if (error) {
+    return (
+      <div className="text-red-600 p-4">
+        {error}
+      </div>
+    );
+  }
+
   if (!currentVideo) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex justify-center items-center p-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
   }
 
   return (
@@ -28,6 +46,7 @@ const VideoPlayer = () => {
         <video 
           className="w-full aspect-video"
           controls
+          key={currentVideo.videoId}
           src={`${config.cdnBasePath}/${currentVideo.videoId}`}
         >
           Your browser does not support the video tag.
@@ -44,7 +63,11 @@ const VideoPlayer = () => {
             {videos.map((video) => (
               <button
                 key={video.videoId}
-                className="text-left hover:bg-gray-100 p-2 rounded"
+                className={`text-left p-2 rounded ${
+                  currentVideo.videoId === video.videoId
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'hover:bg-gray-100'
+                }`}
                 onClick={() => setCurrentVideo(video)}
               >
                 {video.title}
