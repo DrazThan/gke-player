@@ -6,6 +6,7 @@ const VideoPlayer = () => {
   const [videos, setVideos] = useState([]);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchMetadata = async () => {
@@ -18,24 +19,45 @@ const VideoPlayer = () => {
       } catch (err) {
         setError('Failed to load video metadata');
         console.error(err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchMetadata();
   }, []);
 
+  const handleVideoError = (e) => {
+    console.error('Video playback error:', e);
+    setError('Failed to load video. Please try again later.');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
-      <div className="text-red-600 p-4">
-        {error}
+      <div className="text-red-600 p-4 text-center">
+        <p>{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   if (!currentVideo) {
     return (
-      <div className="flex justify-center items-center p-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div className="text-center p-4">
+        No videos available
       </div>
     );
   }
@@ -48,6 +70,8 @@ const VideoPlayer = () => {
           controls
           key={currentVideo.videoId}
           src={`${config.cdnBasePath}/${currentVideo.videoId}`}
+          onError={handleVideoError}
+          poster={`${config.cdnBasePath}/${currentVideo.videoId.replace(/\.[^/.]+$/, '')}_thumb.jpg`}
         >
           Your browser does not support the video tag.
         </video>
